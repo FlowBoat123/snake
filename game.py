@@ -2,7 +2,9 @@ import pygame
 from pygame.locals import *
 import random
 import time
+from pygame import mixer
 pygame.init()
+mixer.init()
 
 #initialize screen
 width = 600 
@@ -11,11 +13,16 @@ screen = pygame.display.set_mode((width,height))
 pygame.display.set_caption("snake")
 #pygame.display.set_icon("")
 
+#music
+mixer.music.load("song.mp3")
+mixer.music.play()
+
 #clock and time 
 clock = pygame.time.Clock()
 
 #font
-font = pygame.font.SysFont(None,40)
+font1 = pygame.font.SysFont(None,40)
+font2 = pygame.font.SysFont(None,60)
 
 #color 
 white = (255,255,255)
@@ -24,15 +31,15 @@ blue = (0,0,255)
 green = (0,255,0)
 red = (255,0,0)
 final_color = (200,100,140)
-
+screen_col = (200,150,100)
 
 def draw_win():
-    screen.fill(white)
+    screen.fill(screen_col)
 #score and print score
 score = 0
 def draw_score():
     score_txt = "Score : " + str(score)
-    score_img = font.render(score_txt,True,final_color)
+    score_img = font1.render(score_txt,True,final_color)
     screen.blit(score_img,(0,0))
 #snake
 cell_size = 10
@@ -45,7 +52,12 @@ snake_pos.append([width // 2,height // 2 + cell_size * 3])
 food_size = 10
 new_food = True
 food_pos = [0,0]
-# print(food_pos,snake_pos[0])
+img_food = pygame.image.load("food.png")
+img_food = pygame.transform.scale(img_food,(cell_size,cell_size))
+
+#head 
+img_head = pygame.image.load("head.png")
+#img_head = pygame.transform.scale(img_head,(cell_size,cell_size))
 
 #over 1 -> end
 game_over = 0
@@ -63,11 +75,16 @@ def check_end():
             return True
         head = False
     return False
-
+again_rect = pygame.Rect((width // 2 - 50,height // 2 + 50,200,40))
 def conclusion():
     final_text = "Your silly is " + str(score)
-    final_text_img = font.render(final_text,True,final_color)
-    screen.blit(final_text_img,(width // 2,height // 2))
+    final_text_img = font2.render(final_text,True,final_color)
+    screen.blit(final_text_img,(width // 2 - 100,height // 2))
+    again_text = "Wanna again ?"
+    again_text_img = font1.render(again_text,True,final_color)
+    pygame.draw.rect(screen,screen_col,again_rect)
+    screen.blit(again_text_img,(width // 2 - 50,height // 2 + 50))
+    screen.blit(img_head,(width // 2 - 100,100))
 
 #run 
 running = True
@@ -85,15 +102,29 @@ while running :
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False   
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w and direction != 3:
-                direction = 1 
-            if event.key == pygame.K_a and direction != 4:
-                direction = 2
-            if event.key == pygame.K_s and direction != 1:
-                direction = 3
-            if event.key == pygame.K_d and direction != 2:
-                direction = 4
+        if game_over == 0:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w and direction != 3:
+                    direction = 1 
+                if event.key == pygame.K_a and direction != 4:
+                    direction = 2
+                if event.key == pygame.K_s and direction != 1:
+                    direction = 3
+                if event.key == pygame.K_d and direction != 2:
+                    direction = 4
+        else:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                clicked = True
+            if event.type == pygame.MOUSEBUTTONUP and clicked == True:
+                clicked = False
+                pos = pygame.mouse.get_pos()
+                if again_rect.collidepoint(pos):
+                    game_over = 0
+                    score = 0
+                    snake_pos = [[width // 2,height // 2]]
+                    snake_pos.append([width // 2,height // 2 + cell_size * 1])
+                    snake_pos.append([width // 2,height // 2 + cell_size * 2])
+                    snake_pos.append([width // 2,height // 2 + cell_size * 3])
 
     #create food
     if new_food == True:
@@ -101,12 +132,11 @@ while running :
         food_pos[0] = cell_size * random.randint(0,(width // cell_size) - 1)
         food_pos[1] = cell_size * random.randint(0,(height // cell_size) - 1)
     pygame.draw.rect(screen,red,(food_pos[0],food_pos[1],cell_size,cell_size))
-    #print(snake_pos[-1])
+    #screen.blit(img_food,(food_pos[0],food_pos[1]))
     if snake_pos[0] == food_pos:
         score += 1
         new_food = True
         new_body = list(snake_pos[-1])
-        # print(new_body)
         if direction == 1:
             new_body[1] += cell_size
         if direction == 3:
@@ -141,6 +171,7 @@ while running :
         pygame.draw.rect(screen,green,(x,y,cell_size,cell_size))
         if head == False :
             pygame.draw.rect(screen,red,(x+1,y+1,cell_size - 2,cell_size - 2))
+            #screen.blit(img_head,(x,y))
             head = True
         else :
             pygame.draw.rect(screen,blue,(x+1,y+1,cell_size - 2,cell_size - 2))
